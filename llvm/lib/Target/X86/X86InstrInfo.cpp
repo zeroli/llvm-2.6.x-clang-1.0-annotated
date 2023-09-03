@@ -678,7 +678,7 @@ bool X86InstrInfo::isMoveInstr(const MachineInstr& MI,
   case X86::MOV8rr:
   case X86::MOV8rr_NOREX:
   case X86::MOV16rr:
-  case X86::MOV32rr: 
+  case X86::MOV32rr:
   case X86::MOV64rr:
   case X86::MOVSSrr:
   case X86::MOVSDrr:
@@ -687,7 +687,7 @@ bool X86InstrInfo::isMoveInstr(const MachineInstr& MI,
   case X86::MOV_Fp3232: case X86::MOV_Fp6464: case X86::MOV_Fp8080:
   case X86::MOV_Fp3264: case X86::MOV_Fp3280:
   case X86::MOV_Fp6432: case X86::MOV_Fp8032:
-      
+
   case X86::FsMOVAPSrr:
   case X86::FsMOVAPDrr:
   case X86::MOVAPSrr:
@@ -710,7 +710,7 @@ bool X86InstrInfo::isMoveInstr(const MachineInstr& MI,
   }
 }
 
-unsigned X86InstrInfo::isLoadFromStackSlot(const MachineInstr *MI, 
+unsigned X86InstrInfo::isLoadFromStackSlot(const MachineInstr *MI,
                                            int &FrameIndex) const {
   switch (MI->getOpcode()) {
   default: break;
@@ -791,14 +791,14 @@ static bool CanRematLoadWithDispOperand(const MachineOperand &MO,
                                         X86TargetMachine &TM) {
   // Loads from constant pool entries can be remat'd.
   if (MO.isCPI()) return true;
-  
+
   // We can remat globals in some cases.
   if (MO.isGlobal()) {
     // If this is a load of a stub, not of the global, we can remat it.  This
     // access will always return the address of the global.
     if (isGlobalStubReference(MO.getTargetFlags()))
       return true;
-    
+
     // If the global itself is constant, we can remat the load.
     if (GlobalVariable *GV = dyn_cast<GlobalVariable>(MO.getGlobal()))
       if (GV->isConstant())
@@ -806,7 +806,7 @@ static bool CanRematLoadWithDispOperand(const MachineOperand &MO,
   }
   return false;
 }
- 
+
 bool
 X86InstrInfo::isReallyTriviallyReMaterializable(const MachineInstr *MI) const {
   switch (MI->getOpcode()) {
@@ -846,10 +846,10 @@ X86InstrInfo::isReallyTriviallyReMaterializable(const MachineInstr *MI) const {
           isPICBase = true;
         }
         return isPICBase;
-      } 
+      }
       return false;
     }
- 
+
      case X86::LEA32r:
      case X86::LEA64r: {
        if (MI->getOperand(2).isImm() &&
@@ -973,7 +973,7 @@ bool X86InstrInfo::isInvariantLoad(const MachineInstr *MI) const {
   // operand and base our analysis on it.  This is safe because the address of
   // none of these three cases is ever used as anything other than a load base
   // and X86 doesn't have any instructions that load from multiple places.
-  
+
   for (unsigned i = 0, e = MI->getNumOperands(); i != e; ++i) {
     const MachineOperand &MO = MI->getOperand(i);
     // Loads from constant pools are trivially invariant.
@@ -991,7 +991,7 @@ bool X86InstrInfo::isInvariantLoad(const MachineInstr *MI) const {
       return MFI.isFixedObjectIndex(Idx) && MFI.isImmutableObjectIndex(Idx);
     }
   }
-  
+
   // All other instances of these instructions are presumed to have other
   // issues.
   return false;
@@ -1042,7 +1042,7 @@ X86InstrInfo::convertToThreeAddress(MachineFunction::iterator &MFI,
   case X86::SHUFPSrri: {
     assert(MI->getNumOperands() == 4 && "Unknown shufps instruction!");
     if (!TM.getSubtarget<X86Subtarget>().hasSSE2()) return 0;
-    
+
     unsigned B = MI->getOperand(1).getReg();
     unsigned C = MI->getOperand(2).getReg();
     if (B != C) return 0;
@@ -1096,21 +1096,21 @@ X86InstrInfo::convertToThreeAddress(MachineFunction::iterator &MFI,
         ? X86::LEA64_32r : X86::LEA32r;
       unsigned leaInReg = RegInfo.createVirtualRegister(&X86::GR32RegClass);
       unsigned leaOutReg = RegInfo.createVirtualRegister(&X86::GR32RegClass);
-            
+
       // Build and insert into an implicit UNDEF value. This is OK because
-      // well be shifting and then extracting the lower 16-bits. 
+      // well be shifting and then extracting the lower 16-bits.
       BuildMI(*MFI, MBBI, MI->getDebugLoc(), get(X86::IMPLICIT_DEF), leaInReg);
       MachineInstr *InsMI =
         BuildMI(*MFI, MBBI, MI->getDebugLoc(), get(X86::INSERT_SUBREG),leaInReg)
         .addReg(leaInReg)
         .addReg(Src, getKillRegState(isKill))
         .addImm(X86::SUBREG_16BIT);
-      
+
       NewMI = BuildMI(*MFI, MBBI, MI->getDebugLoc(), get(Opc), leaOutReg)
         .addReg(0).addImm(1 << ShAmt)
         .addReg(leaInReg, RegState::Kill)
         .addImm(0);
-      
+
       MachineInstr *ExtMI =
         BuildMI(*MFI, MBBI, MI->getDebugLoc(), get(X86::EXTRACT_SUBREG))
         .addReg(Dest, RegState::Define | getDeadRegState(isDead))
@@ -1281,7 +1281,7 @@ X86InstrInfo::convertToThreeAddress(MachineFunction::iterator &MFI,
       LV->replaceKillInstruction(Dest, MI, NewMI);
   }
 
-  MFI->insert(MBBI, NewMI);          // Insert the new inst    
+  MFI->insert(MBBI, NewMI);          // Insert the new inst
   return NewMI;
 }
 
@@ -1502,7 +1502,7 @@ X86::CondCode X86::GetOppositeBranchCondition(X86::CondCode CC) {
 bool X86InstrInfo::isUnpredicatedTerminator(const MachineInstr *MI) const {
   const TargetInstrDesc &TID = MI->getDesc();
   if (!TID.isTerminator()) return false;
-  
+
   // Conditional branch is a special case.
   if (TID.isBranch() && !TID.isBarrier())
     return true;
@@ -1519,7 +1519,7 @@ static bool isBrAnalysisUnpredicatedTerminator(const MachineInstr *MI,
   return TII.isUnpredicatedTerminator(MI);
 }
 
-bool X86InstrInfo::AnalyzeBranch(MachineBasicBlock &MBB, 
+bool X86InstrInfo::AnalyzeBranch(MachineBasicBlock &MBB,
                                  MachineBasicBlock *&TBB,
                                  MachineBasicBlock *&FBB,
                                  SmallVectorImpl<MachineOperand> &Cond,
@@ -1622,7 +1622,7 @@ unsigned X86InstrInfo::RemoveBranch(MachineBasicBlock &MBB) const {
     I = MBB.end();
     ++Count;
   }
-  
+
   return Count;
 }
 
@@ -1839,7 +1839,7 @@ bool X86InstrInfo::copyRegToReg(MachineBasicBlock &MBB,
     BuildMI(MBB, MI, DL, get(Opc)).addReg(SrcReg);
     return true;
   }
-  
+
   // Not yet supported!
   return false;
 }
@@ -2044,7 +2044,7 @@ bool X86InstrInfo::spillCalleeSavedRegisters(MachineBasicBlock &MBB,
   unsigned FPReg = RI.getFrameRegister(MF);
   X86MachineFunctionInfo *X86FI = MF.getInfo<X86MachineFunctionInfo>();
   unsigned CalleeFrameSize = 0;
-  
+
   unsigned Opc = is64Bit ? X86::PUSH64r : X86::PUSH32r;
   for (unsigned i = CSI.size(); i != 0; --i) {
     unsigned Reg = CSI[i-1].getReg();
@@ -2108,7 +2108,7 @@ static MachineInstr *FuseTwoAddrInst(MachineFunction &MF, unsigned Opcode,
     MIB.addOperand(MOs[i]);
   if (NumAddrOps < 4)  // FrameIndex only
     addOffset(MIB, 0);
-  
+
   // Loop over the rest of the ri operands, converting them over.
   unsigned NumOps = MI->getDesc().getNumOperands()-2;
   for (unsigned i = 0; i != NumOps; ++i) {
@@ -2129,7 +2129,7 @@ static MachineInstr *FuseInst(MachineFunction &MF,
   MachineInstr *NewMI = MF.CreateMachineInstr(TII.get(Opcode),
                                               MI->getDebugLoc(), true);
   MachineInstrBuilder MIB(NewMI);
-  
+
   for (unsigned i = 0, e = MI->getNumOperands(); i != e; ++i) {
     MachineOperand &MO = MI->getOperand(i);
     if (i == OpNo) {
@@ -2178,7 +2178,7 @@ X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
   if (isTwoAddr && NumOps >= 2 && i < 2 &&
       MI->getOperand(0).isReg() &&
       MI->getOperand(1).isReg() &&
-      MI->getOperand(0).getReg() == MI->getOperand(1).getReg()) { 
+      MI->getOperand(0).getReg() == MI->getOperand(1).getReg()) {
     OpcodeTablePtr = &RegOp2MemOpTable2Addr;
     isTwoAddrFold = true;
   } else if (i == 0) { // If operand 0
@@ -2190,14 +2190,14 @@ X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
       NewMI = MakeM0Inst(*this, X86::MOV8mi, MOs, MI);
     if (NewMI)
       return NewMI;
-    
+
     OpcodeTablePtr = &RegOp2MemOpTable0;
   } else if (i == 1) {
     OpcodeTablePtr = &RegOp2MemOpTable1;
   } else if (i == 2) {
     OpcodeTablePtr = &RegOp2MemOpTable2;
   }
-  
+
   // If table selected...
   if (OpcodeTablePtr) {
     // Find the Opcode to fuse
@@ -2214,8 +2214,8 @@ X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
       return NewMI;
     }
   }
-  
-  // No fusion 
+
+  // No fusion
   if (PrintFailedFusing)
     cerr << "We failed to fuse operand " << i << " in " << *MI;
   return NULL;
@@ -2226,7 +2226,7 @@ MachineInstr* X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
                                                   MachineInstr *MI,
                                            const SmallVectorImpl<unsigned> &Ops,
                                                   int FrameIndex) const {
-  // Check switch flag 
+  // Check switch flag
   if (NoFusing) return NULL;
 
   const MachineFrameInfo *MFI = MF.getFrameInfo();
@@ -2255,7 +2255,7 @@ MachineInstr* X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
                                                   MachineInstr *MI,
                                            const SmallVectorImpl<unsigned> &Ops,
                                                   MachineInstr *LoadMI) const {
-  // Check switch flag 
+  // Check switch flag
   if (NoFusing) return NULL;
 
   // Determine the alignment of the load.
@@ -2296,7 +2296,7 @@ MachineInstr* X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
         // This doesn't work for several reasons.
         // 1. GlobalBaseReg may have been spilled.
         // 2. It may not be live at MI.
-        return false;
+        return 0;
     }
 
     // Create a v4i32 constant-pool entry.
@@ -2326,13 +2326,13 @@ MachineInstr* X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
 
 bool X86InstrInfo::canFoldMemoryOperand(const MachineInstr *MI,
                                   const SmallVectorImpl<unsigned> &Ops) const {
-  // Check switch flag 
+  // Check switch flag
   if (NoFusing) return 0;
 
   if (Ops.size() == 2 && Ops[0] == 0 && Ops[1] == 1) {
     switch (MI->getOpcode()) {
     default: return false;
-    case X86::TEST8rr: 
+    case X86::TEST8rr:
     case X86::TEST16rr:
     case X86::TEST32rr:
     case X86::TEST64rr:
@@ -2353,7 +2353,7 @@ bool X86InstrInfo::canFoldMemoryOperand(const MachineInstr *MI,
   // instruction is different than folding it other places.  It requires
   // replacing the *two* registers with the memory location.
   const DenseMap<unsigned*, std::pair<unsigned,unsigned> > *OpcodeTablePtr=NULL;
-  if (isTwoAddr && NumOps >= 2 && OpNum < 2) { 
+  if (isTwoAddr && NumOps >= 2 && OpNum < 2) {
     OpcodeTablePtr = &RegOp2MemOpTable2Addr;
   } else if (OpNum == 0) { // If operand 0
     switch (Opc) {
@@ -2369,7 +2369,7 @@ bool X86InstrInfo::canFoldMemoryOperand(const MachineInstr *MI,
   } else if (OpNum == 2) {
     OpcodeTablePtr = &RegOp2MemOpTable2;
   }
-  
+
   if (OpcodeTablePtr) {
     // Find the Opcode to fuse
     DenseMap<unsigned*, std::pair<unsigned,unsigned> >::iterator I =
@@ -2434,7 +2434,7 @@ bool X86InstrInfo::unfoldMemoryOperand(MachineFunction &MF, MachineInstr *MI,
   // Emit the data processing instruction.
   MachineInstr *DataMI = MF.CreateMachineInstr(TID, MI->getDebugLoc(), true);
   MachineInstrBuilder MIB(DataMI);
-  
+
   if (FoldedStore)
     MIB.addReg(Reg, RegState::Define);
   for (unsigned i = 0, e = BeforeOps.size(); i != e; ++i)
@@ -2585,7 +2585,7 @@ unsigned X86InstrInfo::getOpcodeAfterMemoryUnfold(unsigned Opc,
 
 bool X86InstrInfo::BlockHasNoFallThrough(const MachineBasicBlock &MBB) const {
   if (MBB.empty()) return false;
-  
+
   switch (MBB.back().getOpcode()) {
   case X86::TCRETURNri:
   case X86::TCRETURNdi:
@@ -2804,7 +2804,7 @@ static unsigned getDisplacementFieldSize(const MachineOperand *RelocOp) {
     FinalSize += sizeConstant(4);
     return FinalSize;
   }
-  
+
   // Otherwise, this is something that requires a relocation.
   if (RelocOp->isGlobal()) {
     FinalSize += sizeGlobalAddress(false);
@@ -2824,7 +2824,7 @@ static unsigned getMemModRMByteSize(const MachineInstr &MI, unsigned Op,
   int DispVal = 0;
   const MachineOperand *DispForReloc = 0;
   unsigned FinalSize = 0;
-  
+
   // Figure out what sort of displacement we have to handle here.
   if (Op3.isGlobal()) {
     DispForReloc = &Op3;
@@ -2838,7 +2838,7 @@ static unsigned getMemModRMByteSize(const MachineInstr &MI, unsigned Op,
     if (Is64BitMode || IsPIC) {
       DispForReloc = &Op3;
     } else {
-      DispVal = 1; 
+      DispVal = 1;
     }
   } else {
     DispVal = 1;
@@ -2852,10 +2852,10 @@ static unsigned getMemModRMByteSize(const MachineInstr &MI, unsigned Op,
   // Is a SIB byte needed?
   if ((!Is64BitMode || DispForReloc || BaseReg != 0) &&
       IndexReg.getReg() == 0 &&
-      (BaseReg == 0 || X86RegisterInfo::getX86RegNum(BaseReg) != N86::ESP)) {      
+      (BaseReg == 0 || X86RegisterInfo::getX86RegNum(BaseReg) != N86::ESP)) {
     if (BaseReg == 0) {  // Just a displacement?
       // Emit special case [disp32] encoding
-      ++FinalSize; 
+      ++FinalSize;
       FinalSize += getDisplacementFieldSize(DispForReloc);
     } else {
       unsigned BaseRegNo = X86RegisterInfo::getX86RegNum(BaseReg);
@@ -2897,7 +2897,7 @@ static unsigned getMemModRMByteSize(const MachineInstr &MI, unsigned Op,
 static unsigned GetInstSizeWithDesc(const MachineInstr &MI,
                                     const TargetInstrDesc *Desc,
                                     bool IsPIC, bool Is64BitMode) {
-  
+
   unsigned Opcode = Desc->Opcode;
   unsigned FinalSize = 0;
 
@@ -2989,7 +2989,7 @@ static unsigned GetInstSizeWithDesc(const MachineInstr &MI,
     // Remember the current PC offset, this is the PIC relocation
     // base address.
     switch (Opcode) {
-    default: 
+    default:
       break;
     case TargetInstrInfo::INLINEASM: {
       const MachineFunction *MF = MI.getParent()->getParent();
@@ -3037,7 +3037,7 @@ static unsigned GetInstSizeWithDesc(const MachineInstr &MI,
   case X86II::AddRegFrm:
     ++FinalSize;
     ++CurOp;
-    
+
     if (CurOp != NumOps) {
       const MachineOperand &MO1 = MI.getOperand(CurOp++);
       unsigned Size = X86InstrInfo::sizeOfImm(Desc);
@@ -3046,7 +3046,7 @@ static unsigned GetInstSizeWithDesc(const MachineInstr &MI,
       else {
         bool dword = false;
         if (Opcode == X86::MOV64ri)
-          dword = true; 
+          dword = true;
         if (MO1.isGlobal()) {
           FinalSize += sizeGlobalAddress(dword);
         } else if (MO1.isSymbol())
@@ -3060,7 +3060,7 @@ static unsigned GetInstSizeWithDesc(const MachineInstr &MI,
     break;
 
   case X86II::MRMDestReg: {
-    ++FinalSize; 
+    ++FinalSize;
     FinalSize += sizeRegModRMByte();
     CurOp += 2;
     if (CurOp != NumOps) {
@@ -3151,7 +3151,7 @@ static unsigned GetInstSizeWithDesc(const MachineInstr &MI,
   case X86II::MRM2m: case X86II::MRM3m:
   case X86II::MRM4m: case X86II::MRM5m:
   case X86II::MRM6m: case X86II::MRM7m: {
-    
+
     ++FinalSize;
     FinalSize += getMemModRMByteSize(MI, CurOp, IsPIC, Is64BitMode);
     CurOp += X86AddrNumOperands;
@@ -3192,7 +3192,7 @@ static unsigned GetInstSizeWithDesc(const MachineInstr &MI,
     Msg << "Cannot determine size: " << MI;
     llvm_report_error(Msg.str());
   }
-  
+
 
   return FinalSize;
 }
@@ -3228,12 +3228,12 @@ unsigned X86InstrInfo::getGlobalBaseReg(MachineFunction *MF) const {
   if (MBBI != FirstMBB.end()) DL = MBBI->getDebugLoc();
   MachineRegisterInfo &RegInfo = MF->getRegInfo();
   unsigned PC = RegInfo.createVirtualRegister(X86::GR32RegisterClass);
-  
+
   const TargetInstrInfo *TII = TM.getInstrInfo();
   // Operand of MovePCtoStack is completely ignored by asm printer. It's
   // only used in JIT code emission as displacement to pc.
   BuildMI(FirstMBB, MBBI, DL, TII->get(X86::MOVPC32r), PC).addImm(0);
-  
+
   // If we're using vanilla 'GOT' PIC style, we should use relative addressing
   // not to pc, but to _GLOBAL_OFFSET_TABLE_ external.
   if (TM.getSubtarget<X86Subtarget>().isPICStyleGOT()) {

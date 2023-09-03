@@ -51,12 +51,12 @@ namespace {
   public:
     static char ID;
     explicit Emitter(X86TargetMachine &tm, CodeEmitter &mce)
-      : MachineFunctionPass(&ID), II(0), TD(0), TM(tm), 
+      : MachineFunctionPass(&ID), II(0), TD(0), TM(tm),
       MCE(mce), PICBaseOffset(0), Is64BitMode(false),
       IsPIC(TM.getRelocationModel() == Reloc::PIC_) {}
     Emitter(X86TargetMachine &tm, CodeEmitter &mce,
             const X86InstrInfo &ii, const TargetData &td, bool is64)
-      : MachineFunctionPass(&ID), II(&ii), TD(&td), TM(tm), 
+      : MachineFunctionPass(&ID), II(&ii), TD(&td), TM(tm),
       MCE(mce), PICBaseOffset(0), Is64BitMode(is64),
       IsPIC(TM.getRelocationModel() == Reloc::PIC_) {}
 
@@ -68,7 +68,7 @@ namespace {
 
     void emitInstruction(const MachineInstr &MI,
                          const TargetInstrDesc *Desc);
-    
+
     void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.setPreservesAll();
       AU.addRequired<MachineModuleInfo>();
@@ -123,19 +123,19 @@ FunctionPass *llvm::createX86ObjectCodeEmitterPass(X86TargetMachine &TM,
 
 template<class CodeEmitter>
 bool Emitter<CodeEmitter>::runOnMachineFunction(MachineFunction &MF) {
- 
+
   MCE.setModuleInfo(&getAnalysis<MachineModuleInfo>());
-  
+
   II = TM.getInstrInfo();
   TD = TM.getTargetData();
   Is64BitMode = TM.getSubtarget<X86Subtarget>().is64Bit();
   IsPIC = TM.getRelocationModel() == Reloc::PIC_;
-  
+
   do {
-    DEBUG(errs() << "JITTing function '" 
+    DEBUG(errs() << "JITTing function '"
           << MF.getFunction()->getName() << "'\n");
     MCE.startFunction(MF);
-    for (MachineFunction::iterator MBB = MF.begin(), E = MF.end(); 
+    for (MachineFunction::iterator MBB = MF.begin(), E = MF.end();
          MBB != E; ++MBB) {
       MCE.StartMachineBasicBlock(MBB);
       for (MachineBasicBlock::const_iterator I = MBB->begin(), E = MBB->end();
@@ -272,7 +272,7 @@ void Emitter<CodeEmitter>::emitRegModRMByte(unsigned RegOpcodeFld) {
 }
 
 template<class CodeEmitter>
-void Emitter<CodeEmitter>::emitSIBByte(unsigned SS, 
+void Emitter<CodeEmitter>::emitSIBByte(unsigned SS,
                                        unsigned Index,
                                        unsigned Base) {
   // SIB byte is in the same format as the ModRMByte...
@@ -288,8 +288,8 @@ void Emitter<CodeEmitter>::emitConstant(uint64_t Val, unsigned Size) {
   }
 }
 
-/// isDisp8 - Return true if this signed displacement fits in a 8-bit 
-/// sign-extended field. 
+/// isDisp8 - Return true if this signed displacement fits in a 8-bit
+/// sign-extended field.
 static bool isDisp8(int Value) {
   return Value == (signed char)Value;
 }
@@ -298,10 +298,10 @@ static bool gvNeedsNonLazyPtr(const MachineOperand &GVOp,
                               const TargetMachine &TM) {
   // For Darwin-64, simulate the linktime GOT by using the same non-lazy-pointer
   // mechanism as 32-bit mode.
-  if (TM.getSubtarget<X86Subtarget>().is64Bit() && 
+  if (TM.getSubtarget<X86Subtarget>().is64Bit() &&
       !TM.getSubtarget<X86Subtarget>().isTargetDarwin())
     return false;
-  
+
   // Return true if this is a reference to a stub containing the address of the
   // global, not the global itself.
   return isGlobalStubReference(GVOp.getTargetFlags());
@@ -324,7 +324,7 @@ void Emitter<CodeEmitter>::emitDisplacementField(const MachineOperand *RelocOp,
   if (RelocOp->isGlobal()) {
     // In 64-bit static small code model, we could potentially emit absolute.
     // But it's probably not beneficial. If the MCE supports using RIP directly
-    // do it, otherwise fallback to absolute (this is determined by IsPCRel). 
+    // do it, otherwise fallback to absolute (this is determined by IsPCRel).
     //  89 05 00 00 00 00     mov    %eax,0(%rip)  # PC-relative
     //  89 04 25 00 00 00 00  mov    %eax,0x0      # Absolute
     unsigned rt = Is64BitMode ?
@@ -357,7 +357,7 @@ void Emitter<CodeEmitter>::emitMemModRMByte(const MachineInstr &MI,
   const MachineOperand &Op3 = MI.getOperand(Op+3);
   int DispVal = 0;
   const MachineOperand *DispForReloc = 0;
-  
+
   // Figure out what sort of displacement we have to handle here.
   if (Op3.isGlobal()) {
     DispForReloc = &Op3;
@@ -390,12 +390,12 @@ void Emitter<CodeEmitter>::emitMemModRMByte(const MachineInstr &MI,
   bool IsPCRel = MCE.earlyResolveAddresses() ? true : false;
 
   // Is a SIB byte needed?
-  // If no BaseReg, issue a RIP relative instruction only if the MCE can 
+  // If no BaseReg, issue a RIP relative instruction only if the MCE can
   // resolve addresses on-the-fly, otherwise use SIB (Intel Manual 2A, table
   // 2-7) and absolute references.
   if ((!Is64BitMode || DispForReloc || BaseReg != 0) &&
-      IndexReg.getReg() == 0 && 
-      ((BaseReg == 0 && MCE.earlyResolveAddresses()) || BaseReg == X86::RIP || 
+      IndexReg.getReg() == 0 &&
+      ((BaseReg == 0 && MCE.earlyResolveAddresses()) || BaseReg == X86::RIP ||
        (BaseReg != 0 && getX86RegNum(BaseReg) != N86::ESP))) {
     if (BaseReg == 0 || BaseReg == X86::RIP) {  // Just a displacement?
       // Emit special case [disp32] encoding
@@ -445,11 +445,11 @@ void Emitter<CodeEmitter>::emitMemModRMByte(const MachineInstr &MI,
     }
 
     // Calculate what the SS field value should be...
-    static const unsigned SSTable[] = { ~0, 0, 1, ~0, 2, ~0, ~0, ~0, 3 };
+    static const unsigned SSTable[] = { ~0u, 0, 1, ~0u, 2, ~0u, ~0u, ~0u, 3 };
     unsigned SS = SSTable[Scale.getImm()];
 
     if (BaseReg == 0) {
-      // Handle the SIB byte for the case where there is no base, see Intel 
+      // Handle the SIB byte for the case where there is no base, see Intel
       // Manual 2A, table 2-7. The displacement has already been output.
       unsigned IndexRegNo;
       if (IndexReg.getReg())
@@ -580,14 +580,14 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
     // Remember the current PC offset, this is the PIC relocation
     // base address.
     switch (Opcode) {
-    default: 
+    default:
       llvm_unreachable("psuedo instructions should be removed before code"
                        " emission");
       break;
     case TargetInstrInfo::INLINEASM:
       // We allow inline assembler nodes with empty bodies - they can
       // implicitly define registers, which is ok for JIT.
-      assert(MI.getOperand(0).getSymbolName()[0] == 0 && 
+      assert(MI.getOperand(0).getSymbolName()[0] == 0 &&
              "JIT does not support inline asm!");
       break;
     case TargetInstrInfo::DBG_LABEL:
@@ -617,7 +617,7 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
 
     if (CurOp == NumOps)
       break;
-      
+
     const MachineOperand &MO = MI.getOperand(CurOp++);
 
     DEBUG(errs() << "RawFrm CurOp " << CurOp << "\n");
@@ -630,11 +630,11 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
       emitPCRelativeBlockAddress(MO.getMBB());
       break;
     }
-    
+
     if (MO.isGlobal()) {
       // Assume undefined functions may be outside the Small codespace.
-      bool NeedStub = 
-        (Is64BitMode && 
+      bool NeedStub =
+        (Is64BitMode &&
             (TM.getCodeModel() == CodeModel::Large ||
              TM.getSubtarget<X86Subtarget>().isTargetDarwin())) ||
         Opcode == X86::TAILJMPd;
@@ -642,12 +642,12 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
                         MO.getOffset(), 0, NeedStub);
       break;
     }
-    
+
     if (MO.isSymbol()) {
       emitExternalSymbolAddress(MO.getSymbolName(), X86::reloc_pcrel_word);
       break;
     }
-    
+
     assert(MO.isImm() && "Unknown RawFrm operand!");
     if (Opcode == X86::CALLpcrel32 || Opcode == X86::CALL64pcrel32) {
       // Fix up immediate operand for pc relative calls.
@@ -658,20 +658,20 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
       emitConstant(MO.getImm(), X86InstrInfo::sizeOfImm(Desc));
     break;
   }
-      
+
   case X86II::AddRegFrm: {
     MCE.emitByte(BaseOpcode + getX86RegNum(MI.getOperand(CurOp++).getReg()));
-    
+
     if (CurOp == NumOps)
       break;
-      
+
     const MachineOperand &MO1 = MI.getOperand(CurOp++);
     unsigned Size = X86InstrInfo::sizeOfImm(Desc);
     if (MO1.isImm()) {
       emitConstant(MO1.getImm(), Size);
       break;
     }
-    
+
     unsigned rt = Is64BitMode ? X86::reloc_pcrel_word
       : (IsPIC ? X86::reloc_picrel_word : X86::reloc_absolute_word);
     if (Opcode == X86::MOV64ri64i32)
@@ -776,14 +776,14 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
 
     if (CurOp == NumOps)
       break;
-    
+
     const MachineOperand &MO1 = MI.getOperand(CurOp++);
     unsigned Size = X86InstrInfo::sizeOfImm(Desc);
     if (MO1.isImm()) {
       emitConstant(MO1.getImm(), Size);
       break;
     }
-    
+
     unsigned rt = Is64BitMode ? X86::reloc_pcrel_word
       : (IsPIC ? X86::reloc_picrel_word : X86::reloc_absolute_word);
     if (Opcode == X86::MOV64ri32)
@@ -807,7 +807,7 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
   case X86II::MRM4m: case X86II::MRM5m:
   case X86II::MRM6m: case X86II::MRM7m: {
     intptr_t PCAdj = (CurOp + X86AddrNumOperands != NumOps) ?
-      (MI.getOperand(CurOp+X86AddrNumOperands).isImm() ? 
+      (MI.getOperand(CurOp+X86AddrNumOperands).isImm() ?
           X86InstrInfo::sizeOfImm(Desc) : 4) : 0;
 
     MCE.emitByte(BaseOpcode);
@@ -817,14 +817,14 @@ void Emitter<CodeEmitter>::emitInstruction(const MachineInstr &MI,
 
     if (CurOp == NumOps)
       break;
-    
+
     const MachineOperand &MO = MI.getOperand(CurOp++);
     unsigned Size = X86InstrInfo::sizeOfImm(Desc);
     if (MO.isImm()) {
       emitConstant(MO.getImm(), Size);
       break;
     }
-    
+
     unsigned rt = Is64BitMode ? X86::reloc_pcrel_word
       : (IsPIC ? X86::reloc_picrel_word : X86::reloc_absolute_word);
     if (Opcode == X86::MOV64mi32)

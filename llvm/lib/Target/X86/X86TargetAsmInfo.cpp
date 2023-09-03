@@ -24,7 +24,7 @@ enum AsmWriterFlavorTy {
 };
 
 static cl::opt<AsmWriterFlavorTy>
-AsmWriterFlavor("x86-asm-syntax", cl::init(ATT),
+AsmWriterFlavor("x86-asm-syntax", cl::init(Intel),
   cl::desc("Choose style of code to emit from X86 backend:"),
   cl::values(clEnumValN(ATT,   "att",   "Emit AT&T-style assembly"),
              clEnumValN(Intel, "intel", "Emit Intel-style assembly"),
@@ -46,7 +46,7 @@ static const char *const x86_asm_table[] = {
 X86DarwinTargetAsmInfo::X86DarwinTargetAsmInfo(const Triple &Triple) {
   AsmTransCBE = x86_asm_table;
   AssemblerDialect = AsmWriterFlavor;
-    
+
   bool is64Bit = Triple.getArch() == Triple::x86_64;
 
   TextAlignFillValue = 0x90;

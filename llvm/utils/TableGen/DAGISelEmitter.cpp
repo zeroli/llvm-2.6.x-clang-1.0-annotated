@@ -62,7 +62,7 @@ static unsigned getPatternSize(TreePatternNode *P, CodeGenDAGPatterns &CGP) {
           P->getExtTypeNum(0) == MVT::isVoid ||
           P->getExtTypeNum(0) == MVT::Flag ||
           P->getExtTypeNum(0) == MVT::iPTR ||
-          P->getExtTypeNum(0) == MVT::iPTRAny) && 
+          P->getExtTypeNum(0) == MVT::iPTRAny) &&
          "Not a valid pattern node to size!");
   unsigned Size = 3;  // The node itself.
   // If the root node is a ConstantSDNode, increases its size.
@@ -83,14 +83,14 @@ static unsigned getPatternSize(TreePatternNode *P, CodeGenDAGPatterns &CGP) {
   // complexity of this node.
   if (!P->getPredicateFns().empty())
     ++Size;
-  
+
   // Count children in the count if they are also nodes.
   for (unsigned i = 0, e = P->getNumChildren(); i != e; ++i) {
     TreePatternNode *Child = P->getChild(i);
     if (!Child->isLeaf() && Child->getExtTypeNum(0) != MVT::Other)
       Size += getPatternSize(Child, CGP);
     else if (Child->isLeaf()) {
-      if (dynamic_cast<IntInit*>(Child->getLeafValue())) 
+      if (dynamic_cast<IntInit*>(Child->getLeafValue()))
         Size += 5;  // Matches a ConstantSDNode (+3) and a specific value (+2).
       else if (NodeIsComplexPattern(Child))
         Size += getPatternSize(Child, CGP);
@@ -98,7 +98,7 @@ static unsigned getPatternSize(TreePatternNode *P, CodeGenDAGPatterns &CGP) {
         ++Size;
     }
   }
-  
+
   return Size;
 }
 
@@ -108,7 +108,7 @@ static unsigned getPatternSize(TreePatternNode *P, CodeGenDAGPatterns &CGP) {
 static unsigned getResultPatternCost(TreePatternNode *P,
                                      CodeGenDAGPatterns &CGP) {
   if (P->isLeaf()) return 0;
-  
+
   unsigned Cost = 0;
   Record *Op = P->getOperator();
   if (Op->isSubClassOf("Instruction")) {
@@ -124,7 +124,7 @@ static unsigned getResultPatternCost(TreePatternNode *P,
 
 /// getResultPatternCodeSize - Compute the code size of instructions for this
 /// pattern.
-static unsigned getResultPatternSize(TreePatternNode *P, 
+static unsigned getResultPatternSize(TreePatternNode *P,
                                      CodeGenDAGPatterns &CGP) {
   if (P->isLeaf()) return 0;
 
@@ -160,7 +160,7 @@ struct PatternSortingPredicate {
     RHSSize += RHS->getAddedComplexity();
     if (LHSSize > RHSSize) return true;   // LHS -> bigger -> less cost
     if (LHSSize < RHSSize) return false;
-    
+
     // If the patterns have equal complexity, compare generated instruction cost
     unsigned LHSCost = getResultPatternCost(LHS->getDstPattern(), CGP);
     unsigned RHSCost = getResultPatternCost(RHS->getDstPattern(), CGP);
@@ -275,19 +275,19 @@ void DAGISelEmitter::EmitNodeTransforms(raw_ostream &OS) {
   for (CodeGenDAGPatterns::nx_iterator I = CGP.nx_begin(), E = CGP.nx_end();
        I != E; ++I)
     NXsByName.insert(std::make_pair(I->first->getName(), I->second));
-  
+
   OS << "\n// Node transformations.\n";
-  
+
   for (NXsByNameTy::iterator I = NXsByName.begin(), E = NXsByName.end();
        I != E; ++I) {
     Record *SDNode = I->second.first;
     std::string Code = I->second.second;
-    
+
     if (Code.empty()) continue;  // Empty code?  Skip it.
-    
+
     std::string ClassName = CGP.getSDNodeInfo(SDNode).getSDClassName();
     const char *C2 = ClassName == "SDNode" ? "N" : "inN";
-    
+
     OS << "inline SDValue Transform_" << I->first << "(SDNode *" << C2
        << ") {\n";
     if (ClassName != "SDNode")
@@ -312,16 +312,16 @@ void DAGISelEmitter::EmitPredicateFunctions(raw_ostream &OS) {
        I != E; ++I)
     PFsByName.insert(std::make_pair(I->first->getName(), *I));
 
-  
+
   for (PFsByNameTy::iterator I = PFsByName.begin(), E = PFsByName.end();
        I != E; ++I) {
     Record *PatFragRecord = I->second.first;// Record that derives from PatFrag.
     TreePattern *P = I->second.second;
-    
+
     // If there is a code init for this fragment, emit the predicate code.
     std::string Code = PatFragRecord->getValueAsCode("Predicate");
     if (Code.empty()) continue;
-    
+
     if (P->getOnlyTree()->isLeaf())
       OS << "inline bool Predicate_" << PatFragRecord->getName()
       << "(SDNode *N) {\n";
@@ -329,7 +329,7 @@ void DAGISelEmitter::EmitPredicateFunctions(raw_ostream &OS) {
       std::string ClassName =
         CGP.getSDNodeInfo(P->getOnlyTree()->getOperator()).getSDClassName();
       const char *C2 = ClassName == "SDNode" ? "N" : "inN";
-      
+
       OS << "inline bool Predicate_" << PatFragRecord->getName()
          << "(SDNode *" << C2 << ") {\n";
       if (ClassName != "SDNode")
@@ -337,7 +337,7 @@ void DAGISelEmitter::EmitPredicateFunctions(raw_ostream &OS) {
     }
     OS << Code << "\n}\n";
   }
-  
+
   OS << "\n\n";
 }
 
@@ -357,7 +357,7 @@ private:
   TreePatternNode *Pattern;
   // Matched instruction.
   TreePatternNode *Instruction;
-  
+
   // Node to name mapping
   std::map<std::string, std::string> VariableMap;
   // Node to operator mapping
@@ -402,7 +402,7 @@ private:
   unsigned TmpNo;
   unsigned OpcNo;
   unsigned VTNo;
-  
+
   void emitCheck(const std::string &S) {
     if (!S.empty())
       GeneratedCode.push_back(std::make_pair(1, S));
@@ -478,7 +478,7 @@ public:
         abort();
       }
     }
-  
+
     // If this node has a name associated with it, capture it in VariableMap. If
     // we already saw this in the pattern, emit code to verify dagness.
     if (!N->getName().empty()) {
@@ -589,8 +589,8 @@ public:
     // them from the mask in the dag.  For example, it might turn 'AND X, 255'
     // into 'AND X, 254' if it knows the low bit is set.  Emit code that checks
     // to handle this.
-    if (!N->isLeaf() && 
-        (N->getOperator()->getName() == "and" || 
+    if (!N->isLeaf() &&
+        (N->getOperator()->getName() == "and" ||
          N->getOperator()->getName() == "or") &&
         N->getChild(1)->isLeaf() &&
         N->getChild(1)->getPredicateFns().empty()) {
@@ -609,14 +609,14 @@ public:
             ? "CheckOrMask(" : "CheckAndMask(";
           emitCheck(MaskPredicate + RootName + "0, Tmp" + utostr(NTmp) +
                     ", INT64_C(" + itostr(II->getValue()) + "))");
-          
+
           EmitChildMatchCode(N->getChild(0), N, RootName + utostr(0), RootName,
                              ChainSuffix + utostr(0), FoundChain);
           return;
         }
       }
     }
-    
+
     for (unsigned i = 0, e = N->getNumChildren(); i != e; ++i, ++OpNo) {
       emitInit("SDValue " + RootName + utostr(OpNo) + " = " +
                RootName + ".getOperand(" +utostr(OpNo) + ");");
@@ -653,7 +653,7 @@ public:
   }
 
   void EmitChildMatchCode(TreePatternNode *Child, TreePatternNode *Parent,
-                          const std::string &RootName, 
+                          const std::string &RootName,
                           const std::string &ParentRootName,
                           const std::string &ChainSuffix, bool &FoundChain) {
     if (!Child->isLeaf()) {
@@ -690,11 +690,11 @@ public:
           return;
         }
       }
-      
+
       // Handle leaves of various types.
       if (DefInit *DI = dynamic_cast<DefInit*>(Child->getLeafValue())) {
         Record *LeafRec = DI->getDef();
-        if (LeafRec->isSubClassOf("RegisterClass") || 
+        if (LeafRec->isSubClassOf("RegisterClass") ||
             LeafRec->isSubClassOf("PointerLikeRegClass")) {
           // Handle register references.  Nothing to do here.
         } else if (LeafRec->isSubClassOf("Register")) {
@@ -718,7 +718,7 @@ public:
             emitCode("SDValue CPInChain;");
             emitCode("SDValue " + ChainName + ";");
           }
-          
+
           std::string Code = Fn + "(";
           if (CP->hasAttribute(CPAttrParentAsRoot)) {
             Code += ParentRootName + ", ";
@@ -752,7 +752,7 @@ public:
 #endif
           assert(0 && "Unknown leaf type!");
         }
-        
+
         // If there are node predicates for this, emit the calls.
         for (unsigned i = 0, e = Child->getPredicateFns().size(); i != e; ++i)
           emitCheck(Child->getPredicateFns()[i] + "(" + RootName +
@@ -819,7 +819,7 @@ public:
         case MVT::i32: CastType = "unsigned"; break;
         case MVT::i64: CastType = "uint64_t"; break;
         }
-        emitCode("SDValue " + TmpVar + 
+        emitCode("SDValue " + TmpVar +
                  " = CurDAG->getTargetConstant(((" + CastType +
                  ") cast<ConstantSDNode>(" + Val + ")->getZExtValue()), " +
                  getEnumName(N->getTypeNum(0)) + ");");
@@ -831,8 +831,8 @@ public:
       } else if (!N->isLeaf() && N->getOperator()->getName() == "fpimm") {
         assert(N->getExtTypes().size() == 1 && "Multiple types not handled!");
         std::string TmpVar =  "Tmp" + utostr(ResNo);
-        emitCode("SDValue " + TmpVar + 
-                 " = CurDAG->getTargetConstantFP(*cast<ConstantFPSDNode>(" + 
+        emitCode("SDValue " + TmpVar +
+                 " = CurDAG->getTargetConstantFP(*cast<ConstantFPSDNode>(" +
                  Val + ")->getConstantFPValue(), cast<ConstantFPSDNode>(" +
                  Val + ")->getValueType(0));");
         // Add Tmp<ResNo> to VariableMap, so that we don't multiply select this
@@ -928,14 +928,14 @@ public:
       } else if (IntInit *II = dynamic_cast<IntInit*>(N->getLeafValue())) {
         unsigned ResNo = TmpNo++;
         assert(N->getExtTypes().size() == 1 && "Multiple types not handled!");
-        emitCode("SDValue Tmp" + utostr(ResNo) + 
-                 " = CurDAG->getTargetConstant(0x" + 
+        emitCode("SDValue Tmp" + utostr(ResNo) +
+                 " = CurDAG->getTargetConstant(0x" +
                  utohexstr((uint64_t) II->getValue()) +
                  "ULL, " + getEnumName(N->getTypeNum(0)) + ");");
         NodeOps.push_back("Tmp" + utostr(ResNo));
         return NodeOps;
       }
-    
+
 #ifndef NDEBUG
       N->dump();
 #endif
@@ -971,7 +971,7 @@ public:
         PatternHasProperty(InstPatNode, SDNPHasChain, CGP);
       bool InputHasChain = isRoot &&
         NodeHasProperty(Pattern, SDNPHasChain, CGP);
-      unsigned NumResults = Inst.getNumResults();    
+      unsigned NumResults = Inst.getNumResults();
       unsigned NumDstRegs = HasImpResults ? DstRegs.size() : 0;
 
       // Record output varargs info.
@@ -1025,7 +1025,7 @@ public:
       for (unsigned ChildNo = 0, InstOpNo = NumResults;
            InstOpNo != II.OperandList.size(); ++InstOpNo) {
         std::vector<std::string> Ops;
-        
+
         // Determine what to emit for this operand.
         Record *OperandNode = II.OperandList[InstOpNo].Rec;
         if ((OperandNode->isSubClassOf("PredicateOperand") ||
@@ -1135,7 +1135,7 @@ public:
         emitCode("}");
       }
 
-      // Generate MemOperandSDNodes nodes for each memory accesses covered by 
+      // Generate MemOperandSDNodes nodes for each memory accesses covered by
       // this pattern.
       if (II.mayLoad | II.mayStore) {
         std::vector<std::string>::const_iterator mi, mie;
@@ -1195,7 +1195,7 @@ public:
             Code += utostr(NumOps);
         }
       }
-          
+
       if (!isRoot)
         Code += "), 0";
 
@@ -1207,12 +1207,12 @@ public:
 
       if (NodeHasOutFlag) {
         if (!InFlagDecled) {
-          After.push_back("SDValue InFlag(ResNode, " + 
+          After.push_back("SDValue InFlag(ResNode, " +
                           utostr(NumResults+NumDstRegs+(unsigned)NodeHasChain) +
                           ");");
           InFlagDecled = true;
         } else
-          After.push_back("InFlag = SDValue(ResNode, " + 
+          After.push_back("InFlag = SDValue(ResNode, " +
                           utostr(NumResults+NumDstRegs+(unsigned)NodeHasChain) +
                           ");");
       }
@@ -1354,7 +1354,7 @@ public:
   }
 
   /// InsertOneTypeCheck - Insert a type-check for an unresolved type in 'Pat'
-  /// and add it to the tree. 'Pat' and 'Other' are isomorphic trees except that 
+  /// and add it to the tree. 'Pat' and 'Other' are isomorphic trees except that
   /// 'Pat' may be missing types.  If we find an unresolved type to add a check
   /// for, this returns true otherwise false if Pat has all types.
   bool InsertOneTypeCheck(TreePatternNode *Pat, TreePatternNode *Other,
@@ -1369,7 +1369,7 @@ public:
                   getName(Pat->getTypeNum(0)));
       return true;
     }
-  
+
     unsigned OpNo =
       (unsigned) NodeHasProperty(Pat, SDNPHasChain, CGP);
     for (unsigned i = 0, e = Pat->getNumChildren(); i != e; ++i, ++OpNo)
@@ -1473,9 +1473,9 @@ void DAGISelEmitter::GenerateCodeForPattern(const PatternToMatch &Pattern,
 
   // TP - Get *SOME* tree pattern, we don't care which.
   TreePattern &TP = *CGP.pf_begin()->second;
-  
+
   // At this point, we know that we structurally match the pattern, but the
-  // types of the nodes may not match.  Figure out the fewest number of type 
+  // types of the nodes may not match.  Figure out the fewest number of type
   // comparisons we need to emit.  For example, if there is only one integer
   // type supported by a target, there should be no type comparisons at all for
   // integer patterns!
@@ -1488,7 +1488,7 @@ void DAGISelEmitter::GenerateCodeForPattern(const PatternToMatch &Pattern,
   //
   TreePatternNode *Pat = Pattern.getSrcPattern()->clone();
   RemoveAllTypes(Pat);
-  
+
   do {
     // Resolve/propagate as many types as possible.
     try {
@@ -1515,7 +1515,7 @@ void DAGISelEmitter::GenerateCodeForPattern(const PatternToMatch &Pattern,
 /// EraseCodeLine - Erase one code line from all of the patterns.  If removing
 /// a line causes any of them to be empty, remove them and return true when
 /// done.
-static bool EraseCodeLine(std::vector<std::pair<const PatternToMatch*, 
+static bool EraseCodeLine(std::vector<std::pair<const PatternToMatch*,
                           std::vector<std::pair<unsigned, std::string> > > >
                           &Patterns) {
   bool ErasedPatterns = false;
@@ -1532,16 +1532,16 @@ static bool EraseCodeLine(std::vector<std::pair<const PatternToMatch*,
 
 /// EmitPatterns - Emit code for at least one pattern, but try to group common
 /// code together between the patterns.
-void DAGISelEmitter::EmitPatterns(std::vector<std::pair<const PatternToMatch*, 
+void DAGISelEmitter::EmitPatterns(std::vector<std::pair<const PatternToMatch*,
                               std::vector<std::pair<unsigned, std::string> > > >
                                   &Patterns, unsigned Indent,
                                   raw_ostream &OS) {
   typedef std::pair<unsigned, std::string> CodeLine;
   typedef std::vector<CodeLine> CodeList;
   typedef std::vector<std::pair<const PatternToMatch*, CodeList> > PatternList;
-  
+
   if (Patterns.empty()) return;
-  
+
   // Figure out how many patterns share the next code line.  Explicitly copy
   // FirstCodeLine so that we don't invalidate a reference when changing
   // Patterns.
@@ -1549,13 +1549,13 @@ void DAGISelEmitter::EmitPatterns(std::vector<std::pair<const PatternToMatch*,
   unsigned LastMatch = Patterns.size()-1;
   while (LastMatch != 0 && Patterns[LastMatch-1].second.back() == FirstCodeLine)
     --LastMatch;
-  
+
   // If not all patterns share this line, split the list into two pieces.  The
   // first chunk will use this line, the second chunk won't.
   if (LastMatch != 0) {
     PatternList Shared(Patterns.begin()+LastMatch, Patterns.end());
     PatternList Other(Patterns.begin(), Patterns.begin()+LastMatch);
-    
+
     // FIXME: Emit braces?
     if (Shared.size() == 1) {
       const PatternToMatch &Pattern = *Shared.back().first;
@@ -1581,7 +1581,7 @@ void DAGISelEmitter::EmitPatterns(std::vector<std::pair<const PatternToMatch*,
       Indent -= 2;
       OS << std::string(Indent, ' ') << "}\n";
     }
-    
+
     if (Other.size() == 1) {
       const PatternToMatch &Pattern = *Other.back().first;
       OS << "\n" << std::string(Indent, ' ') << "// Pattern: ";
@@ -1600,19 +1600,19 @@ void DAGISelEmitter::EmitPatterns(std::vector<std::pair<const PatternToMatch*,
     EmitPatterns(Other, Indent, OS);
     return;
   }
-  
+
   // Remove this code from all of the patterns that share it.
   bool ErasedPatterns = EraseCodeLine(Patterns);
-  
+
   bool isPredicate = FirstCodeLine.first == 1;
-  
+
   // Otherwise, every pattern in the list has this line.  Emit it.
   if (!isPredicate) {
     // Normal code.
     OS << std::string(Indent, ' ') << FirstCodeLine.second << "\n";
   } else {
     OS << std::string(Indent, ' ') << "if (" << FirstCodeLine.second;
-    
+
     // If the next code line is another predicate, and if all of the pattern
     // in this group share the same next line, emit it inline now.  Do this
     // until we run out of common predicates.
@@ -1626,19 +1626,19 @@ void DAGISelEmitter::EmitPatterns(std::vector<std::pair<const PatternToMatch*,
         }
       // If all of the predicates aren't the same, we can't share them.
       if (!AllEndWithSamePredicate) break;
-      
+
       // Otherwise we can.  Emit it shared now.
       OS << " &&\n" << std::string(Indent+4, ' ')
          << Patterns.back().second.back().second;
       ErasedPatterns = EraseCodeLine(Patterns);
     }
-    
+
     OS << ") {\n";
     Indent += 2;
   }
-  
+
   EmitPatterns(Patterns, Indent, OS);
-  
+
   if (isPredicate)
     OS << std::string(Indent-2, ' ') << "}\n";
 }
@@ -1652,11 +1652,11 @@ static std::string getLegalCName(std::string OpName) {
 
 void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
   const CodeGenTarget &Target = CGP.getTargetInfo();
-  
+
   // Get the namespace to insert instructions into.
   std::string InstNS = Target.getInstNamespace();
   if (!InstNS.empty()) InstNS += "::";
-  
+
   // Group the patterns by their top-level opcodes.
   std::map<std::string, std::vector<const PatternToMatch*> > PatternsByOpcode;
   // All unique target node emission functions.
@@ -1724,7 +1724,7 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
       typedef std::pair<unsigned, std::string> CodeLine;
       typedef std::vector<CodeLine> CodeList;
       typedef CodeList::iterator CodeListI;
-    
+
       std::vector<std::pair<const PatternToMatch*, CodeList> > CodeForPatterns;
       std::vector<std::vector<std::string> > PatternOpcodes;
       std::vector<std::vector<std::string> > PatternVTs;
@@ -1748,7 +1748,7 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
         OutputIsVariadicFlags.push_back(OutputIsVariadic);
         NumInputRootOpsCounts.push_back(NumInputRootOps);
       }
-    
+
       // Factor target node emission code (emitted by EmitResultCode) into
       // separate functions. Uniquing and share them among all instruction
       // selection routines.
@@ -1878,7 +1878,7 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
             break;
           }
         }
-      
+
         // If this pattern definitely matches, and if it isn't the last one, the
         // patterns after it CANNOT ever match.  Error out.
         if (mightNotMatch == false && i != CodeForPatterns.size()-1) {
@@ -1896,16 +1896,16 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
         CodeList &GeneratedCode = CodeForPatterns[i].second;
         std::reverse(GeneratedCode.begin(), GeneratedCode.end());
       }
-    
+
       // Next, reverse the list of patterns itself for the same reason.
       std::reverse(CodeForPatterns.begin(), CodeForPatterns.end());
-    
+
       OS << "SDNode *Select_" << getLegalCName(OpName)
-         << OpVTStr << "(const SDValue &N) {\n";    
+         << OpVTStr << "(const SDValue &N) {\n";
 
       // Emit all of the patterns now, grouped together to share code.
       EmitPatterns(CodeForPatterns, 2, OS);
-    
+
       // If the last pattern has predicates (which could fail) emit code to
       // catch the case where nothing handles a pattern.
       if (mightNotMatch) {
@@ -1922,12 +1922,12 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
       OS << "}\n\n";
     }
   }
-  
+
   // Emit boilerplate.
   OS << "SDNode *Select_INLINEASM(SDValue N) {\n"
      << "  std::vector<SDValue> Ops(N.getNode()->op_begin(), N.getNode()->op_end());\n"
      << "  SelectInlineAsmMemoryOperands(Ops);\n\n"
-    
+
      << "  std::vector<EVT> VTs;\n"
      << "  VTs.push_back(MVT::Other);\n"
      << "  VTs.push_back(MVT::Flag);\n"
@@ -2034,7 +2034,7 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
     // Keep track of whether we see a pattern that has an iPtr result.
     bool HasPtrPattern = false;
     bool HasDefaultPattern = false;
-      
+
     OS << "    switch (NVT) {\n";
     for (unsigned i = 0, e = OpVTs.size(); i < e; ++i) {
       std::string &VTStr = OpVTs[i];
@@ -2054,7 +2054,7 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
          << VTStr << "(N);\n";
     }
     OS << "    default:\n";
-      
+
     // If there is an iPTR result version of this pattern, emit it here.
     if (HasPtrPattern) {
       OS << "      if (TLI.getPointerTy() == NVT)\n";
@@ -2089,7 +2089,7 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
      << "}\n\n";
 
   OS << "void CannotYetSelectIntrinsic(SDValue N) DISABLE_INLINE {\n"
-     << "  cerr << \"Cannot yet select: \";\n"
+     << "  llvm::cerr << \"Cannot yet select: \";\n"
      << "  unsigned iid = cast<ConstantSDNode>(N.getOperand("
      << "N.getOperand(0).getValueType() == MVT::Other))->getZExtValue();\n"
      << " llvm_report_error(\"Cannot yet select: intrinsic %\" +\n"
@@ -2100,7 +2100,7 @@ void DAGISelEmitter::EmitInstructionSelector(raw_ostream &OS) {
 void DAGISelEmitter::run(raw_ostream &OS) {
   EmitSourceFileHeader("DAG Instruction Selector for the " +
                        CGP.getTargetInfo().getName() + " target", OS);
-  
+
   OS << "// *** NOTE: This file is #included into the middle of the target\n"
      << "// *** instruction selector class.  These functions are really "
      << "methods.\n\n";
@@ -2108,10 +2108,10 @@ void DAGISelEmitter::run(raw_ostream &OS) {
   OS << "// Include standard, target-independent definitions and methods used\n"
      << "// by the instruction selector.\n";
   OS << "#include \"llvm/CodeGen/DAGISelHeader.h\"\n\n";
-  
+
   EmitNodeTransforms(OS);
   EmitPredicateFunctions(OS);
-  
+
   DOUT << "\n\nALL PATTERNS TO MATCH:\n\n";
   for (CodeGenDAGPatterns::ptm_iterator I = CGP.ptm_begin(), E = CGP.ptm_end();
        I != E; ++I) {
@@ -2119,10 +2119,10 @@ void DAGISelEmitter::run(raw_ostream &OS) {
     DOUT << "\nRESULT:  "; DEBUG(I->getDstPattern()->dump());
     DOUT << "\n";
   }
-  
+
   // At this point, we have full information about the 'Patterns' we need to
   // parse, both implicitly from instructions as well as from explicit pattern
   // definitions.  Emit the resultant instruction selector.
-  EmitInstructionSelector(OS);  
-  
+  EmitInstructionSelector(OS);
+
 }

@@ -24,9 +24,10 @@
 #define LLVM_SUPPORT_GRAPHWRITER_H
 
 #include "llvm/Support/DOTGraphTraits.h"
+#include "llvm/System/Path.h"
 #include "llvm/Support/Streams.h"
 #include "llvm/ADT/GraphTraits.h"
-#include "llvm/System/Path.h"
+
 #include <fstream>
 #include <vector>
 #include <cassert>
@@ -76,7 +77,7 @@ namespace GraphProgram {
       CIRCO
    };
 }
-   
+
 void DisplayGraph(const sys::Path& Filename, bool wait=true, GraphProgram::Name program = GraphProgram::DOT);
 
 template<typename GraphType>
@@ -304,7 +305,7 @@ sys::Path WriteGraph(const GraphType &G,
     return sys::Path();
   }
 
-  cerr << "Writing '" << Filename << "'... ";
+  cerr << "Writing '" << Filename.toString() << "'... ";
 
   std::ofstream O(Filename.c_str());
 

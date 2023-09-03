@@ -82,7 +82,7 @@ namespace {
     /// AvailableQueue - The priority queue to use for the available SUnits.
     ///
     LatencyPriorityQueue AvailableQueue;
-  
+
     /// PendingQueue - This contains all of the instructions whose operands have
     /// been issued, but their results are not ready yet (due to the latency of
     /// the operation).  Once the operands becomes available, the instruction is
@@ -232,7 +232,7 @@ bool PostRAScheduler::runOnMachineFunction(MachineFunction &Fn) {
 
   return true;
 }
-  
+
 /// StartBlock - Initialize register live-range state for scheduling in
 /// this block.
 ///
@@ -315,7 +315,7 @@ void SchedulePostRATDList::StartBlock(MachineBasicBlock *BB) {
 ///
 void SchedulePostRATDList::Schedule() {
   DEBUG(errs() << "********** List Scheduling **********\n");
-  
+
   // Build the scheduling graph.
   BuildSchedGraph();
 
@@ -340,7 +340,7 @@ void SchedulePostRATDList::Schedule() {
   AvailableQueue.initNodes(SUnits);
 
   ListScheduleTopDown();
-  
+
   AvailableQueue.releaseState();
 }
 
@@ -408,7 +408,7 @@ void SchedulePostRATDList::PrescanInstruction(MachineInstr *MI) {
     unsigned Reg = MO.getReg();
     if (Reg == 0) continue;
     const TargetRegisterClass *NewRC = 0;
-    
+
     if (i < MI->getDesc().getNumOperands())
       NewRC = MI->getDesc().OpInfo[i].getRegClass(TRI);
 
@@ -634,7 +634,7 @@ bool SchedulePostRATDList::BreakAntiDependencies() {
     // breaking anti-dependence edges that aren't going to significantly
     // impact the overall schedule. There are a limited number of registers
     // and we want to save them for the important edges.
-    // 
+    //
     // TODO: Instructions with multiple defs could have multiple
     // anti-dependencies. The current code here only knows how to break one
     // edge per instruction. Note that we'd have to be able to break all of
@@ -762,7 +762,7 @@ bool SchedulePostRATDList::BreakAntiDependencies() {
 void SchedulePostRATDList::ReleaseSucc(SUnit *SU, SDep *SuccEdge) {
   SUnit *SuccSU = SuccEdge->getSUnit();
   --SuccSU->NumPredsLeft;
-  
+
 #ifndef NDEBUG
   if (SuccSU->NumPredsLeft < 0) {
     cerr << "*** Scheduling failed! ***\n";
@@ -771,12 +771,12 @@ void SchedulePostRATDList::ReleaseSucc(SUnit *SU, SDep *SuccEdge) {
     llvm_unreachable(0);
   }
 #endif
-  
+
   // Compute how many cycles it will be before this actually becomes
   // available.  This is the max of the start time of all predecessors plus
   // their latencies.
   SuccSU->setDepthToAtLeast(SU->getDepth() + SuccEdge->getLatency());
-  
+
   // If all the node's predecessors are scheduled, this node is ready
   // to be scheduled. Ignore the special ExitSU node.
   if (SuccSU->NumPredsLeft == 0 && SuccSU != &ExitSU)
@@ -796,7 +796,7 @@ void SchedulePostRATDList::ReleaseSuccessors(SUnit *SU) {
 void SchedulePostRATDList::ScheduleNodeTopDown(SUnit *SU, unsigned CurCycle) {
   DEBUG(errs() << "*** Scheduling [" << CurCycle << "]: ");
   DEBUG(SU->dump(this));
-  
+
   Sequence.push_back(SU);
   assert(CurCycle >= SU->getDepth() && "Node scheduled above its depth!");
   SU->setDepthToAtLeast(CurCycle);
@@ -825,7 +825,7 @@ void SchedulePostRATDList::ListScheduleTopDown() {
 
   // In any cycle where we can't schedule any instructions, we must
   // stall or emit a noop, depending on the target.
-  bool CycleInstCnt = 0;
+  int CycleInstCnt = 0;
 
   // While Available queue is not empty, grab the node with the highest
   // priority. If it is not ready put it back.  Schedule the node.

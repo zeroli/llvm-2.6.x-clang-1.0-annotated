@@ -34,7 +34,7 @@
 
 using namespace llvm;
 
-#ifdef __APPLE__ 
+#ifdef __APPLE__
 // Apple gcc defaults to -fuse-cxa-atexit (i.e. calls __cxa_atexit instead
 // of atexit). It passes the address of linker generated symbol __dso_handle
 // to the function.
@@ -67,7 +67,7 @@ extern "C" void LLVMLinkInJIT() {
 
 
 #if defined(__GNUC__) && !defined(__ARM__EABI__)
- 
+
 // libgcc defines the __register_frame function to dynamically register new
 // dwarf frames for exception handling. This functionality is not portable
 // across compilers and is only provided by GCC. We use the __register_frame
@@ -104,10 +104,10 @@ struct LibgccObject {
   void *unused1;
   void *unused2;
   void *unused3;
-  
+
   /// frame - Pointer to the exception table.
   void *frame;
-  
+
   /// encoding -  The encoding of the object?
   union {
     struct {
@@ -115,15 +115,15 @@ struct LibgccObject {
       unsigned long from_array : 1;
       unsigned long mixed_encoding : 1;
       unsigned long encoding : 8;
-      unsigned long count : 21; 
+      unsigned long count : 21;
     } b;
     size_t i;
   } encoding;
-  
+
   /// fde_end - libgcc defines this field only if some macro is defined. We
   /// include this field even if it may not there, to make libgcc happy.
   char *fde_end;
-  
+
   /// next - At least we know it's a chained list!
   struct LibgccObject *next;
 };
@@ -144,7 +144,7 @@ struct LibgccObjectInfo {
   /// unseenObjects - LibgccObjects not parsed yet by the unwinding runtime.
   ///
   struct LibgccObject* unseenObjects;
-  
+
   unsigned unused[2];
 };
 
@@ -156,32 +156,32 @@ void DarwinRegisterFrame(void* FrameBegin) {
   LibgccObjectInfo* LOI = (struct LibgccObjectInfo*)
     _keymgr_get_and_lock_processwide_ptr(KEYMGR_GCC3_DW2_OBJ_LIST);
   assert(LOI && "This should be preallocated by the runtime");
-  
+
   // Allocate a new LibgccObject to represent this frame. Deallocation of this
   // object may be impossible: since darwin code in libgcc was written after
   // the ability to dynamically register frames, things may crash if we
   // deallocate it.
   struct LibgccObject* ob = (struct LibgccObject*)
     malloc(sizeof(struct LibgccObject));
-  
+
   // Do like libgcc for the values of the field.
   ob->unused1 = (void *)-1;
   ob->unused2 = 0;
   ob->unused3 = 0;
   ob->frame = FrameBegin;
-  ob->encoding.i = 0; 
+  ob->encoding.i = 0;
   ob->encoding.b.encoding = llvm::dwarf::DW_EH_PE_omit;
-  
+
   // Put the info on both places, as libgcc uses the first or the the second
   // field. Note that we rely on having two pointers here. If fde_end was a
   // char, things would get complicated.
   ob->fde_end = (char*)LOI->unseenObjects;
   ob->next = LOI->unseenObjects;
-  
+
   // Update the key's unseenObjects list.
   LOI->unseenObjects = ob;
-  
-  // Finally update the "key". Apparently, libgcc requires it. 
+
+  // Finally update the "key". Apparently, libgcc requires it.
   _keymgr_set_and_unlock_processwide_ptr(KEYMGR_GCC3_DW2_OBJ_LIST,
                                          LOI);
 
@@ -246,25 +246,26 @@ JIT::JIT(ModuleProvider *MP, TargetMachine &tm, TargetJITInfo &tji,
   if (TM.addPassesToEmitMachineCode(PM, *JCE, OptLevel)) {
     llvm_report_error("Target does not support machine code emission!");
   }
-  
+
   // Register routine for informing unwinding runtime about new EH frames
 #if defined(__GNUC__) && !defined(__ARM_EABI__)
 #if USE_KEYMGR
   struct LibgccObjectInfo* LOI = (struct LibgccObjectInfo*)
     _keymgr_get_and_lock_processwide_ptr(KEYMGR_GCC3_DW2_OBJ_LIST);
-  
+
   // The key is created on demand, and libgcc creates it the first time an
   // exception occurs. Since we need the key to register frames, we create
   // it now.
   if (!LOI)
-    LOI = (LibgccObjectInfo*)calloc(sizeof(struct LibgccObjectInfo), 1); 
+    LOI = (LibgccObjectInfo*)calloc(sizeof(struct LibgccObjectInfo), 1);
   _keymgr_set_and_unlock_processwide_ptr(KEYMGR_GCC3_DW2_OBJ_LIST, LOI);
   InstallExceptionTableRegister(DarwinRegisterFrame);
 #else
-  InstallExceptionTableRegister(__register_frame);
+  // ZERO: mingw build doesn't find this
+  //InstallExceptionTableRegister(__register_frame);
 #endif // __APPLE__
 #endif // __GNUC__
-  
+
   // Initialize passes.
   PM.doInitialization();
 }
@@ -294,53 +295,53 @@ void JIT::addModuleProvider(ModuleProvider *MP) {
     if (TM.addPassesToEmitMachineCode(PM, *JCE, CodeGenOpt::Default)) {
       llvm_report_error("Target does not support machine code emission!");
     }
-    
+
     // Initialize passes.
     PM.doInitialization();
   }
-  
+
   ExecutionEngine::addModuleProvider(MP);
 }
 
-/// removeModuleProvider - If we are removing the last ModuleProvider, 
+/// removeModuleProvider - If we are removing the last ModuleProvider,
 /// invalidate the jitstate since the PassManager it contains references a
 /// released ModuleProvider.
 Module *JIT::removeModuleProvider(ModuleProvider *MP, std::string *E) {
   Module *result = ExecutionEngine::removeModuleProvider(MP, E);
-  
+
   MutexGuard locked(lock);
-  
+
   if (jitstate->getMP() == MP) {
     delete jitstate;
     jitstate = 0;
   }
-  
+
   if (!jitstate && !Modules.empty()) {
     jitstate = new JITState(Modules[0]);
 
     FunctionPassManager &PM = jitstate->getPM(locked);
     PM.add(new TargetData(*TM.getTargetData()));
-    
+
     // Turn the machine code intermediate representation into bytes in memory
     // that may be executed.
     if (TM.addPassesToEmitMachineCode(PM, *JCE, CodeGenOpt::Default)) {
       llvm_report_error("Target does not support machine code emission!");
     }
-    
+
     // Initialize passes.
     PM.doInitialization();
-  }    
+  }
   return result;
 }
 
 /// deleteModuleProvider - Remove a ModuleProvider from the list of modules,
-/// and deletes the ModuleProvider and owned Module.  Avoids materializing 
+/// and deletes the ModuleProvider and owned Module.  Avoids materializing
 /// the underlying module.
 void JIT::deleteModuleProvider(ModuleProvider *MP, std::string *E) {
   ExecutionEngine::deleteModuleProvider(MP, E);
-  
+
   MutexGuard locked(lock);
-  
+
   if (jitstate->getMP() == MP) {
     delete jitstate;
     jitstate = 0;
@@ -348,19 +349,19 @@ void JIT::deleteModuleProvider(ModuleProvider *MP, std::string *E) {
 
   if (!jitstate && !Modules.empty()) {
     jitstate = new JITState(Modules[0]);
-    
+
     FunctionPassManager &PM = jitstate->getPM(locked);
     PM.add(new TargetData(*TM.getTargetData()));
-    
+
     // Turn the machine code intermediate representation into bytes in memory
     // that may be executed.
     if (TM.addPassesToEmitMachineCode(PM, *JCE, CodeGenOpt::Default)) {
       llvm_report_error("Target does not support machine code emission!");
     }
-    
+
     // Initialize passes.
     PM.doInitialization();
-  }    
+  }
 }
 
 /// run - Start execution with the specified function and arguments.
@@ -394,7 +395,7 @@ GenericValue JIT::runFunction(Function *F,
 
         // Call the function.
         GenericValue rv;
-        rv.IntVal = APInt(32, PF(ArgValues[0].IntVal.getZExtValue(), 
+        rv.IntVal = APInt(32, PF(ArgValues[0].IntVal.getZExtValue(),
                                  (char **)GVTOP(ArgValues[1]),
                                  (const char **)GVTOP(ArgValues[2])));
         return rv;
@@ -407,7 +408,7 @@ GenericValue JIT::runFunction(Function *F,
 
         // Call the function.
         GenericValue rv;
-        rv.IntVal = APInt(32, PF(ArgValues[0].IntVal.getZExtValue(), 
+        rv.IntVal = APInt(32, PF(ArgValues[0].IntVal.getZExtValue(),
                                  (char **)GVTOP(ArgValues[1])));
         return rv;
       }
@@ -441,7 +442,7 @@ GenericValue JIT::runFunction(Function *F,
         rv.IntVal = APInt(BitWidth, ((int(*)())(intptr_t)FPtr)());
       else if (BitWidth <= 64)
         rv.IntVal = APInt(BitWidth, ((int64_t(*)())(intptr_t)FPtr)());
-      else 
+      else
         llvm_unreachable("Integer types > 64 bits not supported");
       return rv;
     }
@@ -503,7 +504,7 @@ GenericValue JIT::runFunction(Function *F,
     case Type::PointerTyID:
       void *ArgPtr = GVTOP(AV);
       if (sizeof(void*) == 4)
-        C = ConstantInt::get(Type::getInt32Ty(F->getContext()), 
+        C = ConstantInt::get(Type::getInt32Ty(F->getContext()),
                              (int)(intptr_t)ArgPtr);
       else
         C = ConstantInt::get(Type::getInt64Ty(F->getContext()),
@@ -608,12 +609,12 @@ void JIT::runJITOnFunctionUnlocked(Function *F, const MutexGuard &locked) {
     isAlreadyCodeGenerating = true;
     jitstate->getPM(locked).run(*PF);
     isAlreadyCodeGenerating = false;
-    
+
     // Now that the function has been jitted, ask the JITEmitter to rewrite
     // the stub with real address of the function.
     updateFunctionStub(PF);
   }
-  
+
   // If the JIT is configured to emit info so that dlsym can be used to
   // rewrite stubs to external globals, do so now.
   if (areDlsymStubsEnabled() && isLazyCompilationDisabled())
@@ -629,11 +630,11 @@ void *JIT::getPointerToFunction(Function *F) {
     return Addr;   // Check if function already code gen'd
 
   MutexGuard locked(lock);
-  
+
   // Now that this thread owns the lock, check if another thread has already
   // code gen'd the function.
   if (void *Addr = getPointerToGlobalIfAvailable(F))
-    return Addr;  
+    return Addr;
 
   // Make sure we read in the function if it exists in this Module.
   if (F->hasNotBeenReadFromBitcode()) {
@@ -647,7 +648,7 @@ void *JIT::getPointerToFunction(Function *F) {
       }
     }
     assert(MP && "Function isn't in a module we know about!");
-    
+
     std::string ErrorMsg;
     if (MP->materializeFunction(F, &ErrorMsg)) {
       llvm_report_error("Error reading function '" + F->getName()+

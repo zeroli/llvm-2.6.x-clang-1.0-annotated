@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/llvm/clang/",
+                "${workspaceFolder}/llvm/include",
+                "${workspaceFolder}/build/include",
+                "${workspaceFolder}/build/clang/include"
+            ],
+            "windowsSdkVersion": "10.0.17763.0"
+        }
+    ],
+    "version": 4
+}

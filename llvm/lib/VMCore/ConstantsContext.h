@@ -92,7 +92,7 @@ public:
     return User::operator new(s, 2);
   }
   ExtractElementConstantExpr(Constant *C1, Constant *C2)
-    : ConstantExpr(cast<VectorType>(C1->getType())->getElementType(), 
+    : ConstantExpr(cast<VectorType>(C1->getType())->getElementType(),
                    Instruction::ExtractElement, &Op<0>(), 2) {
     Op<0>() = C1;
     Op<1>() = C2;
@@ -112,7 +112,7 @@ public:
     return User::operator new(s, 3);
   }
   InsertElementConstantExpr(Constant *C1, Constant *C2, Constant *C3)
-    : ConstantExpr(C1->getType(), Instruction::InsertElement, 
+    : ConstantExpr(C1->getType(), Instruction::InsertElement,
                    &Op<0>(), 3) {
     Op<0>() = C1;
     Op<1>() = C2;
@@ -136,7 +136,7 @@ public:
   : ConstantExpr(VectorType::get(
                    cast<VectorType>(C1->getType())->getElementType(),
                    cast<VectorType>(C3->getType())->getNumElements()),
-                 Instruction::ShuffleVector, 
+                 Instruction::ShuffleVector,
                  &Op<0>(), 3) {
     Op<0>() = C1;
     Op<1>() = C2;
@@ -356,7 +356,7 @@ struct ConstantCreator<ConstantExpr, Type, ExprMapKeyType> {
          V.opcode < Instruction::BinaryOpsEnd))
       return new BinaryConstantExpr(V.opcode, V.operands[0], V.operands[1]);
     if (V.opcode == Instruction::Select)
-      return new SelectConstantExpr(V.operands[0], V.operands[1], 
+      return new SelectConstantExpr(V.operands[0], V.operands[1],
                                     V.operands[2]);
     if (V.opcode == Instruction::ExtractElement)
       return new ExtractElementConstantExpr(V.operands[0], V.operands[1]);
@@ -380,10 +380,10 @@ struct ConstantCreator<ConstantExpr, Type, ExprMapKeyType> {
     // value and it is combined with the instruction opcode by multiplying
     // the opcode by one hundred. We must decode this to get the predicate.
     if (V.opcode == Instruction::ICmp)
-      return new CompareConstantExpr(Ty, Instruction::ICmp, V.predicate, 
+      return new CompareConstantExpr(Ty, Instruction::ICmp, V.predicate,
                                      V.operands[0], V.operands[1]);
-    if (V.opcode == Instruction::FCmp) 
-      return new CompareConstantExpr(Ty, Instruction::FCmp, V.predicate, 
+    if (V.opcode == Instruction::FCmp)
+      return new CompareConstantExpr(Ty, Instruction::FCmp, V.predicate,
                                      V.operands[0], V.operands[1]);
     llvm_unreachable("Invalid ConstantExpr!");
     return 0;
@@ -407,7 +407,7 @@ struct ConvertConstant<ConstantExpr, Type> {
     case Instruction::PtrToInt:
     case Instruction::IntToPtr:
     case Instruction::BitCast:
-      New = ConstantExpr::getCast(OldC->getOpcode(), OldC->getOperand(0), 
+      New = ConstantExpr::getCast(OldC->getOpcode(), OldC->getOperand(0),
                                   NewTy);
       break;
     case Instruction::Select:
@@ -555,7 +555,7 @@ private:
   /// This is the primary way we avoid creating two of the same shape
   /// constant.
   MapTy Map;
-    
+
   /// InverseMap - If "HasLargeKey" is true, this contains an inverse mapping
   /// from the constants to their element in Map.  This is important for
   /// removal of constants from the array, which would otherwise have to scan
@@ -565,7 +565,7 @@ private:
   /// AbstractTypeMap - Map for abstract type constants.
   ///
   AbstractTypeMapTy AbstractTypeMap;
-    
+
   /// ValueMapLock - Mutex for this map.
   sys::SmartMutex<true> ValueMapLock;
 
@@ -574,7 +574,7 @@ public:
   // to enforce proper synchronization.
   typename MapTy::iterator map_begin() { return Map.begin(); }
   typename MapTy::iterator map_end() { return Map.end(); }
-    
+
   /// InsertOrGetItem - Return an iterator for the specified element.
   /// If the element exists in the map, the returned iterator points to the
   /// entry and Exists=true.  If not, the iterator points to the newly
@@ -589,7 +589,7 @@ public:
     Exists = !IP.second;
     return IP.first;
   }
-    
+
 private:
   typename MapTy::iterator FindExistingElement(ConstantClass *CP) {
     if (HasLargeKey) {
@@ -599,7 +599,7 @@ private:
              "InverseMap corrupt!");
       return IMI->second;
     }
-      
+
     typename MapTy::iterator I =
       Map.find(MapKey(static_cast<const TypeClass*>(CP->getRawType()),
                       getValType(CP)));
@@ -611,7 +611,7 @@ private:
     }
     return I;
   }
-    
+
   ConstantClass* Create(const TypeClass *Ty, const ValType &V,
                         typename MapTy::iterator I) {
     ConstantClass* Result =
@@ -626,7 +626,7 @@ private:
     // If the type of the constant is abstract, make sure that an entry
     // exists for it in the AbstractTypeMap.
     if (Ty->isAbstract()) {
-      typename AbstractTypeMapTy::iterator TI = 
+      typename AbstractTypeMapTy::iterator TI =
                                                AbstractTypeMap.find(Ty);
 
       if (TI == AbstractTypeMap.end()) {
@@ -636,28 +636,28 @@ private:
         AbstractTypeMap.insert(TI, std::make_pair(Ty, I));
       }
     }
-      
+
     return Result;
   }
 public:
-    
+
   /// getOrCreate - Return the specified constant from the map, creating it if
   /// necessary.
   ConstantClass *getOrCreate(const TypeClass *Ty, const ValType &V) {
     sys::SmartScopedLock<true> Lock(ValueMapLock);
     MapKey Lookup(Ty, V);
     ConstantClass* Result = 0;
-    
+
     typename MapTy::iterator I = Map.find(Lookup);
-    // Is it in the map?  
+    // Is it in the map?
     if (I != Map.end())
       Result = static_cast<ConstantClass *>(I->second);
-        
+
     if (!Result) {
       // If no preexisting value, create one now...
       Result = Create(Ty, V, I);
     }
-        
+
     return Result;
   }
 
@@ -669,7 +669,7 @@ public:
 
     if (HasLargeKey)  // Remember the reverse mapping if needed.
       InverseMap.erase(CP);
-      
+
     // Now that we found the entry, make sure this isn't the entry that
     // the AbstractTypeMap points to.
     const TypeClass *Ty = static_cast<const TypeClass *>(I->first.first);
@@ -712,7 +712,7 @@ public:
     Map.erase(I);
   }
 
-    
+
   /// MoveConstantToNewSlot - If we are about to change C to be the element
   /// specified by I, update our internal data structures to reflect this
   /// fact.
@@ -723,7 +723,7 @@ public:
     typename MapTy::iterator OldI = FindExistingElement(C);
     assert(OldI != Map.end() && "Constant not found in constant table!");
     assert(OldI->second == C && "Didn't find correct element?");
-      
+
     // If this constant is the representative element for its abstract type,
     // update the AbstractTypeMap so that the representative element is I.
     if (C->getType()->isAbstract()) {
@@ -734,10 +734,10 @@ public:
       if (ATI->second == OldI)
         ATI->second = I;
     }
-      
+
     // Remove the old entry from the map.
     Map.erase(OldI);
-    
+
     // Update the inverse map so that we know that this constant is now
     // located at descriptor I.
     if (HasLargeKey) {
@@ -745,7 +745,7 @@ public:
       InverseMap[C] = I;
     }
   }
-    
+
   void refineAbstractType(const DerivedType *OldTy, const Type *NewTy) {
     sys::SmartScopedLock<true> Lock(ValueMapLock);
     typename AbstractTypeMapTy::iterator I =

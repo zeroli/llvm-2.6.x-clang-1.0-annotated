@@ -16,6 +16,7 @@
 #include "llvm/BasicBlock.h"
 #include "llvm/Support/CFG.h"
 #include <algorithm>
+#include <iostream>
 
 using namespace llvm;
 

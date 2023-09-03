@@ -34,7 +34,7 @@ static std::string MangleLetter(unsigned char C) {
 std::string Mangler::makeNameProper(const std::string &X,
                                     ManglerPrefixTy PrefixTy) {
   assert(!X.empty() && "Cannot mangle empty strings");
-  
+
   if (!UseQuotes) {
     std::string Result;
 
@@ -45,7 +45,7 @@ std::string Mangler::makeNameProper(const std::string &X,
       NeedPrefix = false;
       ++I;  // Skip over the marker.
     }
-    
+
     // Mangle the first letter specially, don't allow numbers.
     if (*I >= '0' && *I <= '9')
       Result += MangleLetter(*I++);
@@ -71,7 +71,7 @@ std::string Mangler::makeNameProper(const std::string &X,
 
   bool NeedPrefix = true;
   bool NeedQuotes = false;
-  std::string Result;    
+  std::string Result;
   std::string::const_iterator I = X.begin();
   if (*I == 1) {
     NeedPrefix = false;
@@ -81,7 +81,7 @@ std::string Mangler::makeNameProper(const std::string &X,
   // If the first character is a number, we need quotes.
   if (*I >= '0' && *I <= '9')
     NeedQuotes = true;
-    
+
   // Do an initial scan of the string, checking to see if we need quotes or
   // to escape a '"' or not.
   if (!NeedQuotes)
@@ -90,12 +90,12 @@ std::string Mangler::makeNameProper(const std::string &X,
         NeedQuotes = true;
         break;
       }
-    
+
   // In the common case, we don't need quotes.  Handle this quickly.
   if (!NeedQuotes) {
     if (!NeedPrefix)
       return X.substr(1);   // Strip off the \001.
-    
+
     Result = Prefix + X;
 
     if (PrefixTy == Mangler::Private)
@@ -108,7 +108,7 @@ std::string Mangler::makeNameProper(const std::string &X,
 
   if (NeedPrefix)
     Result = X.substr(0, I-X.begin());
-    
+
   // Otherwise, construct the string the expensive way.
   for (std::string::const_iterator E = X.end(); I != E; ++I) {
     if (*I == '"')
@@ -139,21 +139,26 @@ std::string Mangler::makeNameProper(const std::string &X,
 ///
 std::string Mangler::getMangledName(const GlobalValue *GV, const char *Suffix,
                                     bool ForcePrivate) {
+  #if 0
   assert((!isa<Function>(GV) || !cast<Function>(GV)->isIntrinsic()) &&
          "Intrinsic functions cannot be mangled by Mangler");
-
+  #else
+  if (isa<Function>(GV) && cast<Function>(GV)->isIntrinsic()) {
+    return GV->getNameStr();
+  }
+  #endif
   ManglerPrefixTy PrefixTy =
     (GV->hasPrivateLinkage() || ForcePrivate) ? Mangler::Private :
       GV->hasLinkerPrivateLinkage() ? Mangler::LinkerPrivate : Mangler::Default;
 
   if (GV->hasName())
     return makeNameProper(GV->getNameStr() + Suffix, PrefixTy);
-  
+
   // Get the ID for the global, assigning a new one if we haven't got one
   // already.
   unsigned &ID = AnonGlobalIDs[GV];
   if (ID == 0) ID = NextAnonGlobalID++;
-  
+
   // Must mangle the global into a unique ID.
   return makeNameProper("__unnamed_" + utostr(ID) + Suffix, PrefixTy);
 }
@@ -172,7 +177,7 @@ Mangler::Mangler(Module &M, const char *prefix, const char *privatePrefix,
     markCharAcceptable(X);
   for (unsigned char X = '0'; X <= '9'; ++X)
     markCharAcceptable(X);
-  
+
   // These chars are acceptable.
   markCharAcceptable('_');
   markCharAcceptable('$');
