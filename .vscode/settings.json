@@ -3,6 +3,7 @@
     "files.associations": {
         "*.cu": "cpp",
         "iostream": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "*.def": "cpp"
     }
 }

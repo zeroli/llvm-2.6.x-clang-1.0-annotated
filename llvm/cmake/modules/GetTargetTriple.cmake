@@ -9,7 +9,7 @@ function( get_target_triple var )
       set( ${var} "i686-pc-win32" PARENT_SCOPE )
     endif()
   elseif( MINGW AND NOT MSYS )
-    set( ${var} "i686-pc-mingw32" PARENT_SCOPE )
+    set( ${var} "x86_64-pc-mingw32" PARENT_SCOPE )
   else( MSVC )
     set(config_guess ${LLVM_MAIN_SRC_DIR}/autoconf/config.guess)
     execute_process(COMMAND sh ${config_guess}

@@ -5,13 +5,41 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch - clang-cc",
+            "name": "(gdb) Kaleidoscope",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/Kaleidoscope.exe",
+            "args": [
+                "-print-emitted-asm"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:/Users/zeli/Apps/msys64/mingw64/bin/gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) clang-cc",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/clang-cc.exe",
             "args": [
+                "-D_WIN32",
                 "-triple",
-                "i386-pc-mingw32",
+                "x86_64-pc-mingw32",
                 "-S",
                 "-disable-free",
                 "-main-file-name",
@@ -20,16 +48,17 @@
                 "static",
                 "--disable-fp-elim",
                 "--unwind-tables=0",
-                "--mcpu=pentium4",
+                "--mcpu=x86-64",
                 "--fmath-errno=1",
                 "-v",
                 "-IC:/Users/zeli/Apps/msys64/mingw64/include",
                 "-fdiagnostics-show-option",
+                "--x86-asm-syntax=att",
                 "-o",
-                "-",
+                "${workspaceFolder}/build/t.s",
                 "-x",
                 "c",
-                "${workspaceFolder}/build/t.c"
+                "${workspaceFolder}/build/t.c",
             ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
@@ -51,12 +80,12 @@
             ]
         },
         {
-            "name": "(gdb) Launch - clang",
+            "name": "(gdb) clang",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/clang.exe",
             "args": [
-                "-E",
+                "-ccc-print-phases",
                 "-v",
                 "${workspaceFolder}/build/t.c",
                 "-I\"C:/Users/zeli/Apps/msys64/mingw64/include\""
@@ -81,7 +110,7 @@
             ]
         },
         {
-            "name": "(gdb) Launch - lli",
+            "name": "(gdb) lli",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/lli.exe",
@@ -107,21 +136,5 @@
                 }
             ]
         },
-        {
-            "name": "(Windows) Launch - clang",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/bin/clang.exe",
-            "args": [
-                "-E",
-                "-v",
-                "${workspaceFolder}/build/t.c",
-                "-I\"C:/Users/zeli/Apps/msys64/mingw64/include\""
-            ],
-            "stopAtEntry": true,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "console": "externalTerminal"
-        }
     ]
 }

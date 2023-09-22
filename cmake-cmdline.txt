@@ -1,6 +1,6 @@
 cd build
-cmake -G"MinGW Makefiles" -DCMAKE_BUILD_TYPE=debug \
+cmake -DCMAKE_BUILD_TYPE=debug \
     -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD=X86 \
-    -DCMAKE_CXX_FLAGS="-fpermissive -Wno-deprecated-declarations -Wno-enum-compare" \
-    -Thost=x64 ../llvm
+    -DCMAKE_CXX_FLAGS="-fpermissive -Wno-deprecated-declarations -Wno-enum-compare -m64" \
+    ../llvm
 cmake --build . -t clang
